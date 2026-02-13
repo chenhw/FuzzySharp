@@ -25,6 +25,7 @@
 - Optimized scorer cache creation (`GetOrAdd` with lazy factory)
 - Removed temporary list allocations in partial-ratio strategies by tracking `max` directly
 - Rewrote `Levenshtein` hot paths (`EditDistance` / `GetRatio`) to use `ReadOnlySpan<T>` with `stackalloc` + `ArrayPool<int>` row buffers
+- Added short-string (`<=64`) dedicated stackalloc fast path to reduce latency while retaining 0 allocations
 - Added benchmark suite (`BenchmarkDotNet`) comparing legacy and rewritten Levenshtein paths
 
 ### API modernization

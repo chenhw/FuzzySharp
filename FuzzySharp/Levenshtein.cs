@@ -853,6 +853,7 @@ namespace FuzzySharp
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ComputeEditDistance(ReadOnlySpan<char> left, ReadOnlySpan<char> right, int substitutionCost, Span<int> row)
         {
             int rowLength = right.Length + 1;
@@ -923,6 +924,7 @@ namespace FuzzySharp
             return row[rowLength - 1];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ComputeEditDistance<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right, int substitutionCost, Span<int> row) where T : IEquatable<T>
         {
             int rowLength = right.Length + 1;

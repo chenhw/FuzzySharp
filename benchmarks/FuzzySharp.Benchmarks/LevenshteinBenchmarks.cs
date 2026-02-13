@@ -10,7 +10,7 @@ public class LevenshteinBenchmarks
     private string _left = string.Empty;
     private string _right = string.Empty;
 
-    [Params(16, 64, 256, 512)]
+    [Params(8, 16, 32, 64)]
     public int Size { get; set; }
 
     [GlobalSetup]
