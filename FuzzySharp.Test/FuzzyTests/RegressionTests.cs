@@ -59,14 +59,14 @@ namespace FuzzySharp.Test.FuzzyTests
                     }
                     catch (InvalidOperationException e)
                     {
-                        Assert.Fail($"{t.Name}.score failed with empty string as first parameter");
+                        ClassicAssert.Fail($"{t.Name}.score failed with empty string as first parameter");
                     }
                     try
                     {
                         scorer.Score("TEST", s);
                     } catch (InvalidOperationException e)
                     {
-                        Assert.Fail($"{t.Name}.score failed with empty string as second parameter");
+                        ClassicAssert.Fail($"{t.Name}.score failed with empty string as second parameter");
                     }
                     try
                     {
@@ -74,7 +74,7 @@ namespace FuzzySharp.Test.FuzzyTests
                     }
                     catch (InvalidOperationException e)
                     {
-                        Assert.Fail($"{t.Name}.score failed with empty string as both parameters");
+                        ClassicAssert.Fail($"{t.Name}.score failed with empty string as both parameters");
                     }
 
                 }

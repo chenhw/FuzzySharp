@@ -1,5 +1,7 @@
-﻿using FuzzySharp.PreProcess;
+﻿using System;
+using FuzzySharp.PreProcess;
 using FuzzySharp.SimilarityRatio;
+using FuzzySharp.SimilarityRatio.Scorer;
 using FuzzySharp.SimilarityRatio.Scorer.Composite;
 using FuzzySharp.SimilarityRatio.Scorer.StrategySensitive;
 
@@ -7,30 +9,46 @@ namespace FuzzySharp
 {
     public static class Fuzz
     {
+        private static int ScoreWith<TScorer>(string input1, string input2) where TScorer : IRatioScorer, new()
+        {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
+
+            return ScorerCache.Get<TScorer>().Score(input1, input2);
+        }
+
+        private static int ScoreWith<TScorer>(string input1, string input2, PreprocessMode preprocessMode) where TScorer : IRatioScorer, new()
+        {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
+
+            return ScorerCache.Get<TScorer>().Score(input1, input2, preprocessMode);
+        }
+
         #region Ratio
         /// <summary>
         /// Calculates a Levenshtein simple ratio between the strings.
         /// This indicates a measure of similarity
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int Ratio(string input1, string input2)
         {
-            return ScorerCache.Get<DefaultRatioScorer>().Score(input1, input2);
+            return ScoreWith<DefaultRatioScorer>(input1, input2);
         }
 
         /// <summary>
         /// Calculates a Levenshtein simple ratio between the strings.
         /// This indicates a measure of similarity
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int Ratio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<DefaultRatioScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<DefaultRatioScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -40,12 +58,12 @@ namespace FuzzySharp
         /// uses a heuristic called "best partial" for when two strings
         /// are of noticeably different lengths.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialRatioScorer>().Score(input1, input2);
+            return ScoreWith<PartialRatioScorer>(input1, input2);
         }
 
         /// <summary>
@@ -53,13 +71,13 @@ namespace FuzzySharp
         /// uses a heuristic called "best partial" for when two strings
         /// are of noticeably different lengths.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialRatioScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<PartialRatioScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -69,12 +87,12 @@ namespace FuzzySharp
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenSortRatio(string input1, string input2)
         {
-            return ScorerCache.Get<TokenSortScorer>().Score(input1, input2);
+            return ScoreWith<TokenSortScorer>(input1, input2);
         }
 
         /// <summary>
@@ -82,13 +100,13 @@ namespace FuzzySharp
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenSortRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<TokenSortScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<TokenSortScorer>(input1, input2, preprocessMode);
         }
 
         /// <summary>
@@ -96,12 +114,12 @@ namespace FuzzySharp
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenSortRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialTokenSortScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenSortScorer>(input1, input2);
         }
 
         /// <summary>
@@ -109,13 +127,13 @@ namespace FuzzySharp
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenSortRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialTokenSortScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<PartialTokenSortScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -126,12 +144,12 @@ namespace FuzzySharp
         /// built up and is compared using the simple ratio algorithm.
         /// Useful for strings where words appear redundantly.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenSetRatio(string input1, string input2)
         {
-            return ScorerCache.Get<TokenSetScorer>().Score(input1, input2);
+            return ScoreWith<TokenSetScorer>(input1, input2);
         }
 
         /// <summary>
@@ -140,13 +158,13 @@ namespace FuzzySharp
         /// built up and is compared using the simple ratio algorithm.
         /// Useful for strings where words appear redundantly.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenSetRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<TokenSetScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<TokenSetScorer>(input1, input2, preprocessMode);
         }
 
         /// <summary>
@@ -155,12 +173,12 @@ namespace FuzzySharp
         /// built up and is compared using the simple ratio algorithm.
         /// Useful for strings where words appear redundantly.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenSetRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialTokenSetScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenSetScorer>(input1, input2);
         }
 
         /// <summary>
@@ -169,13 +187,13 @@ namespace FuzzySharp
         /// built up and is compared using the simple ratio algorithm.
         /// Useful for strings where words appear redundantly.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenSetRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialTokenSetScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<PartialTokenSetScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -184,50 +202,50 @@ namespace FuzzySharp
         /// Splits the strings into tokens and computes the ratio on those tokens (not the individual chars,
         /// but the strings themselves)
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenDifferenceRatio(string input1, string input2)
         {
-            return ScorerCache.Get<TokenDifferenceScorer>().Score(input1, input2);
+            return ScoreWith<TokenDifferenceScorer>(input1, input2);
         }
 
         /// <summary>
         /// Splits the strings into tokens and computes the ratio on those tokens (not the individual chars,
         /// but the strings themselves)
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenDifferenceRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<TokenDifferenceScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<TokenDifferenceScorer>(input1, input2, preprocessMode);
         }
 
         /// <summary>
         /// Splits the strings into tokens and computes the ratio on those tokens (not the individual chars,
         /// but the strings themselves)
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenDifferenceRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialTokenDifferenceScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenDifferenceScorer>(input1, input2);
         }
 
         /// <summary>
         /// Splits the strings into tokens and computes the ratio on those tokens (not the individual chars,
         /// but the strings themselves)
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenDifferenceRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialTokenDifferenceScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<PartialTokenDifferenceScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -235,47 +253,47 @@ namespace FuzzySharp
         /// <summary>
         /// Splits longer string into tokens and takes the initialism and compares it to the shorter
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenInitialismRatio(string input1, string input2)
         {
-            return ScorerCache.Get<TokenInitialismScorer>().Score(input1, input2);
+            return ScoreWith<TokenInitialismScorer>(input1, input2);
         }
 
         /// <summary>
         /// Splits longer string into tokens and takes the initialism and compares it to the shorter
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenInitialismRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<TokenInitialismScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<TokenInitialismScorer>(input1, input2, preprocessMode);
         }
 
         /// <summary>
         /// Splits longer string into tokens and takes the initialism and compares it to the shorter
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenInitialismRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialTokenInitialismScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenInitialismScorer>(input1, input2);
         }
 
         /// <summary>
         /// Splits longer string into tokens and takes the initialism and compares it to the shorter
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenInitialismRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialTokenInitialismScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenInitialismScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -285,12 +303,12 @@ namespace FuzzySharp
         /// of the other strings tokens. One string must have all its characters in order in the other string
         /// to even be considered.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenAbbreviationRatio(string input1, string input2)
         {
-            return ScorerCache.Get<TokenAbbreviationScorer>().Score(input1, input2);
+            return ScoreWith<TokenAbbreviationScorer>(input1, input2);
         }
 
         /// <summary>
@@ -298,13 +316,13 @@ namespace FuzzySharp
         /// of the other strings tokens. One string must have all its characters in order in the other string
         /// to even be considered.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int TokenAbbreviationRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<TokenAbbreviationScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<TokenAbbreviationScorer>(input1, input2, preprocessMode);
         }
 
         /// <summary>
@@ -312,12 +330,12 @@ namespace FuzzySharp
         /// of the other strings tokens. One string must have all its characters in order in the other string
         /// to even be considered.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenAbbreviationRatio(string input1, string input2)
         {
-            return ScorerCache.Get<PartialTokenAbbreviationScorer>().Score(input1, input2);
+            return ScoreWith<PartialTokenAbbreviationScorer>(input1, input2);
         }
 
         /// <summary>
@@ -325,13 +343,13 @@ namespace FuzzySharp
         /// of the other strings tokens. One string must have all its characters in order in the other string
         /// to even be considered.
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int PartialTokenAbbreviationRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<PartialTokenAbbreviationScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<PartialTokenAbbreviationScorer>(input1, input2, preprocessMode);
         }
         #endregion
 
@@ -339,24 +357,24 @@ namespace FuzzySharp
         /// <summary>
         /// Calculates a weighted ratio between the different algorithms for best results
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int WeightedRatio(string input1, string input2)
         {
-            return ScorerCache.Get<WeightedRatioScorer>().Score(input1, input2);
+            return ScoreWith<WeightedRatioScorer>(input1, input2);
         }
 
         /// <summary>
         /// Calculates a weighted ratio between the different algorithms for best results
         /// </summary>
-        /// <param name="input1"></param>
-        /// <param name="input2"></param>
-        /// <param name="preprocessMode"></param>
-        /// <returns></returns>
+        /// <param name="input1">First input string.</param>
+        /// <param name="input2">Second input string.</param>
+        /// <param name="preprocessMode">Preprocessing mode applied before scoring.</param>
+        /// <returns>Similarity score from 0 to 100.</returns>
         public static int WeightedRatio(string input1, string input2, PreprocessMode preprocessMode)
         {
-            return ScorerCache.Get<WeightedRatioScorer>().Score(input1, input2, preprocessMode);
+            return ScoreWith<WeightedRatioScorer>(input1, input2, preprocessMode);
         }
         #endregion
     }

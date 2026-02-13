@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Text.RegularExpressions;
 using FuzzySharp.PreProcess;
 using FuzzySharp.SimilarityRatio.Scorer.StrategySensitive.Generic;
 
@@ -14,8 +13,8 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
 
         public int Score(string input1, string input2)
         {
-            var tokens1 = Regex.Split(input1, @"\s+").Where(s => s.Any()).OrderBy(s => s).ToArray();
-            var tokens2 = Regex.Split(input2, @"\s+").Where(s => s.Any()).OrderBy(s => s).ToArray();
+            var tokens1 = StringTokenization.SplitOnWhitespace(input1).OrderBy(s => s).ToArray();
+            var tokens2 = StringTokenization.SplitOnWhitespace(input2).OrderBy(s => s).ToArray();
 
             return Score(tokens1, tokens2);
         }

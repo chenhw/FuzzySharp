@@ -1,12 +1,24 @@
 # FuzzySharp
 C# .NET fuzzy string matching implementation of Seat Geek's well known python FuzzyWuzzy algorithm. 
 
-## Usage
+## Runtime Requirements
+- .NET SDK/Runtime: `10.0` or newer
+- This package is now `net10.0` only (legacy target frameworks were removed)
+- The library is intended to be safely consumed by NativeAOT publishing applications
 
-Install-Package FuzzySharp -Version 2.0.1
+## Install
+Install-Package FuzzySharp -Version 3.0.0
 
-## NOTES
-As of version 2.0.0, if either test string is an empty string, the scorers will return a score of 0. Previously this was returning 100 for all partial ratios, which was causing severe issues for some fo the compound scorers.
+## Notes
+
+### v3.0.0
+- Breaking change: target frameworks migrated to `net10.0` only
+- Added AOT/trim compatibility analysis and CI AOT smoke publishing checks
+- Added async extraction APIs (`ExtractAllAsync`, `ExtractOneAsync`)
+- String preprocessing now uses invariant lowercasing (`ToLowerInvariant`) for deterministic cross-culture behavior
+
+### v2.0.0
+As of version 2.0.0, if either test string is an empty string, the scorers return a score of 0. Previously this returned 100 for all partial ratios, which caused severe issues for some compound scorers.
 
 #### Simple Ratio
 ```csharp

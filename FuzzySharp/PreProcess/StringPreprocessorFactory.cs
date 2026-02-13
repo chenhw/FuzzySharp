@@ -1,31 +1,34 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Buffers;
 
 namespace FuzzySharp.PreProcess
 {
-    internal class StringPreprocessorFactory
+    internal static class StringPreprocessorFactory
     {
-        private static string pattern = "[^ a-zA-Z0-9]";
+        private static readonly SearchValues<char> s_allowedCharacters = SearchValues.Create(" abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
         private static string Default(string input)
         {
-            input = Regex.Replace(input, pattern, " ");
-            input = input.ToLower();
+            ArgumentNullException.ThrowIfNull(input);
 
-            return input.Trim();
+            return string.Create(input.Length, input, static (buffer, source) =>
+            {
+                for (int i = 0; i < source.Length; i++)
+                {
+                    var c = source[i];
+                    buffer[i] = s_allowedCharacters.Contains(c) ? char.ToLowerInvariant(c) : ' ';
+                }
+            }).Trim();
         }
 
         public static Func<string, string> GetPreprocessor(PreprocessMode mode)
         {
-            switch (mode)
+            return mode switch
             {
-                case PreprocessMode.Full:
-                    return Default;
-                case PreprocessMode.None:
-                    return s => s;
-                default:
-                    throw new InvalidOperationException($"Invalid string preprocessor mode: {mode}");
-            }
+                PreprocessMode.Full => Default,
+                PreprocessMode.None => static s => s,
+                _ => throw new InvalidOperationException($"Invalid string preprocessor mode: {mode}")
+            };
         }
     }
 }

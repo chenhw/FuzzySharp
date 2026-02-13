@@ -10,12 +10,16 @@ namespace FuzzySharp
     {
         private static EditOp[] GetEditOps<T>(T[] arr1, T[] arr2) where T : IEquatable<T>
         {
+            ArgumentNullException.ThrowIfNull(arr1);
+            ArgumentNullException.ThrowIfNull(arr2);
             return GetEditOps(arr1.Length, arr1, arr2.Length, arr2);
         }
 
         // Special Case
         private static EditOp[] GetEditOps(string s1, string s2)
         {
+            ArgumentNullException.ThrowIfNull(s1);
+            ArgumentNullException.ThrowIfNull(s2);
             return GetEditOps(s1.Length, s1.ToCharArray(), s2.Length, s2.ToCharArray());
         }
 
@@ -52,6 +56,11 @@ namespace FuzzySharp
 
             len1++;
             len2++;
+
+            if (len2 > int.MaxValue / len1)
+            {
+                throw new OverflowException("Edit operation matrix is too large.");
+            }
 
             matrix = new int[len2 * len1];
 
@@ -227,13 +236,17 @@ namespace FuzzySharp
         }
 
         public static MatchingBlock[] GetMatchingBlocks<T>(T[] s1, T[] s2) where T : IEquatable<T>
-        { 
+        {
+            ArgumentNullException.ThrowIfNull(s1);
+            ArgumentNullException.ThrowIfNull(s2);
             return GetMatchingBlocks(s1.Length, s2.Length, GetEditOps(s1, s2));
         }
 
         // Special Case
         public static MatchingBlock[] GetMatchingBlocks(string s1, string s2)
         {
+            ArgumentNullException.ThrowIfNull(s1);
+            ArgumentNullException.ThrowIfNull(s2);
 
             return GetMatchingBlocks(s1.Length, s2.Length, GetEditOps(s1, s2));
 
@@ -242,6 +255,7 @@ namespace FuzzySharp
 
         public static MatchingBlock[] GetMatchingBlocks(int len1, int len2, OpCode[] ops)
         {
+            ArgumentNullException.ThrowIfNull(ops);
 
             int n = ops.Length;
 
@@ -298,7 +312,10 @@ namespace FuzzySharp
                 }
             }
 
-            Debug.Assert(mb != noOfMB);
+            if (mb == noOfMB)
+            {
+                throw new InvalidOperationException("Internal matching-block computation failed.");
+            }
 
             MatchingBlock finalBlock = new MatchingBlock
             {
@@ -466,7 +483,10 @@ namespace FuzzySharp
 
             if (SourcePos < len1 || DestPos < len2)
             {
-                Debug.Assert(len1 -SourcePos == len2 - DestPos);
+                if (len1 - SourcePos != len2 - DestPos)
+                {
+                    throw new InvalidOperationException("Edit-op block lengths are inconsistent.");
+                }
 
                 MatchingBlock mb = new MatchingBlock();
                 mb.SourcePos = SourcePos;
@@ -476,7 +496,10 @@ namespace FuzzySharp
                 matchingBlocks[mbIndex++] = mb;
             }
 
-            Debug.Assert(numberOfMatchingBlocks == mbIndex);
+            if (numberOfMatchingBlocks != mbIndex)
+            {
+                throw new InvalidOperationException("Matching block count mismatch.");
+            }
 
             MatchingBlock finalBlock = new MatchingBlock();
             finalBlock.SourcePos = len1;
@@ -647,7 +670,10 @@ namespace FuzzySharp
             if (SourcePos < len1 || DestPos < len2)
             {
 
-                Debug.Assert(len1 - SourcePos == len2 - DestPos);
+                if (len1 - SourcePos != len2 - DestPos)
+                {
+                    throw new InvalidOperationException("Opcode range lengths are inconsistent.");
+                }
                 if (opCodes[oIndex] == null)
                     opCodes[oIndex] = new OpCode();
                 opCodes[oIndex].EditType = EditType.KEEP;
@@ -660,7 +686,10 @@ namespace FuzzySharp
 
             }
 
-            Debug.Assert(oIndex == noOfBlocks);
+            if (oIndex != noOfBlocks)
+            {
+                throw new InvalidOperationException("Opcode block count mismatch.");
+            }
 
             return opCodes;
         }
@@ -668,11 +697,15 @@ namespace FuzzySharp
         // Special Case
         public static int EditDistance(string s1, string s2, int xcost = 0)
         {
+            ArgumentNullException.ThrowIfNull(s1);
+            ArgumentNullException.ThrowIfNull(s2);
             return EditDistance(s1.ToCharArray(), s2.ToCharArray(), xcost);
         }
 
         public static int EditDistance<T>(T[] c1, T[] c2, int xcost = 0) where T:  IEquatable<T>
         {
+            ArgumentNullException.ThrowIfNull(c1);
+            ArgumentNullException.ThrowIfNull(c2);
 
             int i;
             int half;
@@ -895,6 +928,9 @@ namespace FuzzySharp
 
         public static double GetRatio<T>(T[] input1, T[] input2) where T : IEquatable<T>
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
+
             int len1   = input1.Length;
             int len2   = input2.Length;
             int lensum = len1 + len2;
@@ -906,6 +942,9 @@ namespace FuzzySharp
 
         public static double GetRatio<T>(IEnumerable<T> input1, IEnumerable<T> input2) where T : IEquatable<T>
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
+
             var s1 = input1.ToArray();
             var s2 = input2.ToArray();
             int len1 = s1.Length;
@@ -920,6 +959,8 @@ namespace FuzzySharp
         // Special Case
         public static double GetRatio(string s1, string s2)
         {
+            ArgumentNullException.ThrowIfNull(s1);
+            ArgumentNullException.ThrowIfNull(s2);
             return GetRatio(s1.ToCharArray(), s2.ToCharArray());
         }
     }

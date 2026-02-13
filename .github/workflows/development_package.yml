@@ -11,28 +11,31 @@ jobs:
     name: Build
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v1
+        uses: actions/checkout@v4
         
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 10.0.x
         
       - name: Build with dotnet
         run: dotnet build --configuration Release
 
       - name: Test with dotnet
         run: dotnet test
+
+      - name: AOT smoke publish
+        run: dotnet publish samples/FuzzySharp.AotSmoke/FuzzySharp.AotSmoke.csproj -c Release -r win-x64 -p:PublishAot=true
   deploy:
-    needs: [Build]
+    needs: [build]
     name: Package
     runs-on: [windows-latest]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Setup .NET Core
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 3.0.100
+          dotnet-version: 10.0.x
         
       - name: Build with dotnet
         run: dotnet build --configuration Release 

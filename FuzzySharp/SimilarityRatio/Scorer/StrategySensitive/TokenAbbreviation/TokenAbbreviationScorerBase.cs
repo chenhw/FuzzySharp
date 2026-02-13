@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using FuzzySharp.PreProcess;
 using FuzzySharp.Utils;
 
 namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
@@ -23,14 +23,19 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
                 longer  = input1;
             }
 
+            if (shorter.Length == 0)
+            {
+                return 0;
+            }
+
             double lenRatio = ((double)longer.Length) / shorter.Length;
 
             // if longer isn't at least 1.5 times longer than the other, then its probably not an abbreviation
             if (lenRatio < 1.5) return 0;
 
             // numbers can't be abbreviations for other numbers, though that would be hilarious. "Yes, 4 - as in 4,238"
-            var tokensLonger = Regex.Matches(longer, @"[a-zA-Z]+").Cast<Match>().Select(m => m.Value).ToArray();
-            var tokensShorter = Regex.Matches(shorter, @"[a-zA-Z]+").Cast<Match>().Select(m => m.Value).ToArray();
+            var tokensLonger = StringTokenization.SplitOnAsciiLetterRuns(longer);
+            var tokensShorter = StringTokenization.SplitOnAsciiLetterRuns(shorter);
 
             // more than 4 tokens and it's probably not an abbreviation (and could get costly)
             if (tokensShorter.Length > 4)
@@ -50,6 +55,11 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
             {
                 moreTokens = tokensShorter;
                 fewerTokens = tokensLonger;
+            }
+
+            if (fewerTokens.Length == 0)
+            {
+                return 0;
             }
 
             var allPermutations = moreTokens.PermutationsOfSize(fewerTokens.Length);

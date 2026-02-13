@@ -76,7 +76,7 @@ namespace FuzzySharp.Test.EvaluationTests
             var ratio = Fuzz.TokenInitialismRatio(shorter, longer);
 
             // assert
-            Assert.IsTrue(ratio >= 0);
+            ClassicAssert.IsTrue(ratio >= 0);
         }
     }
 }

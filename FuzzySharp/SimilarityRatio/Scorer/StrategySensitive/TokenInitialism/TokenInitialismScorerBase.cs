@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Text.RegularExpressions;
+﻿using FuzzySharp.PreProcess;
 
 namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
 {
@@ -21,14 +20,29 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
                 longer  = input1;
             }
 
+            if (shorter.Length == 0)
+            {
+                return 0;
+            }
+
             double lenRatio = ((double)longer.Length) / shorter.Length;
 
             // if longer isn't at least 3 times longer than the other, then it's probably not an initialism
             if (lenRatio < 3) return 0;
 
-            var initials = Regex.Split(longer, @"\s+").Where(s => s.Any()).Select(s => s[0]);
+            var tokens = StringTokenization.SplitOnWhitespace(longer);
+            if (tokens.Length == 0)
+            {
+                return 0;
+            }
 
-            return Scorer(string.Join("", initials), shorter);
+            var initials = new char[tokens.Length];
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                initials[i] = tokens[i][0];
+            }
+
+            return Scorer(new string(initials), shorter);
         }
     }
 }

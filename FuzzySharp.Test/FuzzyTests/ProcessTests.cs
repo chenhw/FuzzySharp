@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using FuzzySharp.Extractor;
 using FuzzySharp.SimilarityRatio;
 using FuzzySharp.SimilarityRatio.Scorer.StrategySensitive;
 using NUnit.Framework;
@@ -53,7 +55,7 @@ namespace FuzzySharp.Test.FuzzyTests
         {
             var query = "new york mets at atlanta braves";
             var best  = Process.ExtractOne(query, _baseballStrings);
-            Assert.AreEqual(best.Value, "braves vs mets");
+            ClassicAssert.AreEqual(best.Value, "braves vs mets");
 
         }
 
@@ -62,7 +64,7 @@ namespace FuzzySharp.Test.FuzzyTests
         {
             var query = "philadelphia phillies at atlanta braves";
             var best  = Process.ExtractOne(query, _baseballStrings);
-            Assert.AreEqual(best.Value, _baseballStrings[2]);
+            ClassicAssert.AreEqual(best.Value, _baseballStrings[2]);
 
         }
 
@@ -71,7 +73,7 @@ namespace FuzzySharp.Test.FuzzyTests
         {
             var query = "atlanta braves at philadelphia phillies";
             var best  = Process.ExtractOne(query, _baseballStrings);
-            Assert.AreEqual(best.Value, _baseballStrings[2]);
+            ClassicAssert.AreEqual(best.Value, _baseballStrings[2]);
 
         }
 
@@ -80,7 +82,7 @@ namespace FuzzySharp.Test.FuzzyTests
         {
             var query = "chicago cubs vs new york mets";
             var best  = Process.ExtractOne(query, _baseballStrings);
-            Assert.AreEqual(best.Value, _baseballStrings[0]);
+            ClassicAssert.AreEqual(best.Value, _baseballStrings[0]);
 
         }
 
@@ -96,7 +98,7 @@ namespace FuzzySharp.Test.FuzzyTests
             var query = new[] { "new york mets vs chicago cubs", "CitiField", "2017-03-19", "8pm" };
 
             var best = Process.ExtractOne(query, events, strings => strings[0]);
-            Assert.AreEqual(best.Value, events[0]);
+            ClassicAssert.AreEqual(best.Value, events[0]);
         }
 
         [Test]
@@ -125,15 +127,15 @@ namespace FuzzySharp.Test.FuzzyTests
             // 'complete' match of choices[1]"
 
             var best = Process.ExtractOne(query, choices);
-            Assert.AreEqual(best.Value, choices[1]);
+            ClassicAssert.AreEqual(best.Value, choices[1]);
 
             // now, use the custom scorer
 
             best = Process.ExtractOne(query, choices, null, ScorerCache.Get<DefaultRatioScorer>());
-            Assert.AreEqual(best.Value, choices[0]);
+            ClassicAssert.AreEqual(best.Value, choices[0]);
 
             best = Process.ExtractOne(query, choicesDict.Select(k => k.Value));
-            Assert.AreEqual(best.Value, choicesDict[1]);
+            ClassicAssert.AreEqual(best.Value, choicesDict[1]);
 
         }
 
@@ -154,7 +156,7 @@ namespace FuzzySharp.Test.FuzzyTests
             // we don't want to randomly match to something, so we use a reasonable cutoff
 
             var best = Process.ExtractSorted(query, choices, cutoff: 50);
-            Assert.IsTrue(!best.Any());
+            ClassicAssert.IsTrue(!best.Any());
             // .assertIsNone(best) // unittest.TestCase did not have assertIsNone until Python 2.7
 
             // however if we had no cutoff, something would get returned
@@ -178,9 +180,9 @@ namespace FuzzySharp.Test.FuzzyTests
             var query = "new york mets vs chicago cubs";
             // Only find 100-score cases
             var res = Process.ExtractSorted(query, choices, cutoff: 100);
-            Assert.IsTrue(res.Any());
+            ClassicAssert.IsTrue(res.Any());
             var bestMatch = res.First();
-            Assert.IsTrue(bestMatch.Value == choices[0]);
+            ClassicAssert.IsTrue(bestMatch.Value == choices[0]);
 
         }
 
@@ -199,7 +201,40 @@ namespace FuzzySharp.Test.FuzzyTests
             var query = "new york mets at chicago cubs";
 
             var best = Process.ExtractOne(query, choices);
-            Assert.AreEqual(best.Value, choices[1]);
+            ClassicAssert.AreEqual(best.Value, choices[1]);
+        }
+
+        [Test]
+        public async Task TestExtractAllAsync()
+        {
+            var query = "new york mets at atlanta braves";
+            var results = new List<ExtractedResult<string>>();
+
+            await foreach (var result in Process.ExtractAllAsync(query, AsAsyncEnumerable(_baseballStrings)))
+            {
+                results.Add(result);
+            }
+
+            ClassicAssert.IsTrue(results.Any());
+            ClassicAssert.IsTrue(results.Any(r => r.Value == "braves vs mets"));
+        }
+
+        [Test]
+        public async Task TestExtractOneAsync()
+        {
+            var query = "chicago cubs vs new york mets";
+            var best = await Process.ExtractOneAsync(query, AsAsyncEnumerable(_baseballStrings));
+
+            ClassicAssert.AreEqual(_baseballStrings[0], best.Value);
+        }
+
+        private static async IAsyncEnumerable<string> AsAsyncEnumerable(IEnumerable<string> items)
+        {
+            foreach (var item in items)
+            {
+                yield return item;
+                await Task.Yield();
+            }
         }
 
 //[Test]
@@ -249,7 +284,7 @@ namespace FuzzySharp.Test.FuzzyTests
 //        deduped_list = ['Tom', 'Dick', 'Harry']
 
 //        result = Process.dedupe(contains_dupes)
-//        Assert.AreEqual(result, deduped_list)
+//        ClassicAssert.AreEqual(result, deduped_list)
 
 //    }
 
@@ -261,8 +296,8 @@ namespace FuzzySharp.Test.FuzzyTests
 //        result = Process.ExtractOne(basic_string, match_strings, scorer=fuzz.ratio)
 //        part_result = Process.ExtractOne(basic_string, match_strings, scorer=fuzz.partial_ratio)
 
-//        Assert.AreEqual(result, ('a, b', 100))
-//        Assert.AreEqual(part_result, ('a, b', 100))
+//        ClassicAssert.AreEqual(result, ('a, b', 100))
+//        ClassicAssert.AreEqual(part_result, ('a, b', 100))
 
 //    }
     }
