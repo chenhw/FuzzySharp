@@ -9,6 +9,8 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
     {
         public override int Score(string input1, string input2)
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
             var tokens1 = new HashSet<string>(StringTokenization.SplitOnWhitespace(input1));
             var tokens2 = new HashSet<string>(StringTokenization.SplitOnWhitespace(input2));
 

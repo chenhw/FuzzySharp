@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using FuzzySharp.Edits;
 
 namespace FuzzySharp
@@ -542,7 +543,7 @@ namespace FuzzySharp
 
                 }
 
-                // TODO: Is this right?
+                // Each edit operation starts a new block
                 noOfBlocks++;
                 type = ops[o].EditType;
 
@@ -694,236 +695,377 @@ namespace FuzzySharp
             return opCodes;
         }
 
+        private const int ShortStringThreshold = 64;
+        private const int StackAllocIntThreshold = 256;
+
         // Special Case
         public static int EditDistance(string s1, string s2, int xcost = 0)
         {
             ArgumentNullException.ThrowIfNull(s1);
             ArgumentNullException.ThrowIfNull(s2);
-            return EditDistance(s1.ToCharArray(), s2.ToCharArray(), xcost);
+
+            return EditDistance(s1.AsSpan(), s2.AsSpan(), xcost);
         }
 
-        public static int EditDistance<T>(T[] c1, T[] c2, int xcost = 0) where T:  IEquatable<T>
+        public static int EditDistance<T>(T[] c1, T[] c2, int xcost = 0) where T : IEquatable<T>
         {
             ArgumentNullException.ThrowIfNull(c1);
             ArgumentNullException.ThrowIfNull(c2);
 
-            int i;
-            int half;
+            return EditDistance(c1.AsSpan(), c2.AsSpan(), xcost);
+        }
 
-            int str1 = 0;
-            int str2 = 0;
+        private static int EditDistance(ReadOnlySpan<char> left, ReadOnlySpan<char> right, int xcost)
+        {
+            TrimCommonAffixes(ref left, ref right);
 
-            int len1 = c1.Length;
-            int len2 = c2.Length;
+            int len1 = left.Length;
+            int len2 = right.Length;
 
-            /* strip common prefix */
-            while (len1 > 0 && len2 > 0 && c1[str1].Equals(c2[str2]))
-            {
-
-                len1--;
-                len2--;
-                str1++;
-                str2++;
-
-            }
-
-            /* strip common suffix */
-            while (len1 > 0 && len2 > 0 && c1[str1 + len1 - 1].Equals(c2[str2 + len2 - 1]))
-            {
-                len1--;
-                len2--;
-            }
-
-            /* catch trivial cases */
             if (len1 == 0)
+            {
                 return len2;
-            if (len2 == 0)
-                return len1;
+            }
 
-            /* make the inner cycle (i.e. str2) the longer one */
+            if (len2 == 0)
+            {
+                return len1;
+            }
+
             if (len1 > len2)
             {
+                ReadOnlySpan<char> temp = left;
+                left = right;
+                right = temp;
 
-                int nx = len1;
-                int temp = str1;
-
-                len1 = len2;
-                len2 = nx;
-
-                str1 = str2;
-                str2 = temp;
-
-                T[] t = c2;
-                c2 = c1;
-                c1 = t;
-
+                len1 = left.Length;
+                len2 = right.Length;
             }
 
-            /* check len1 == 1 separately */
             if (len1 == 1)
             {
-                if (xcost != 0)
-                {
-                    return len2 + 1 - 2 * Memchr(c2, str2, c1[str1], len2);
-                }
-                else
-                {
-                    return len2 - Memchr(c2, str2, c1[str1], len2);
-                }
+                int found = right.IndexOf(left[0]) >= 0 ? 1 : 0;
+                return xcost != 0 ? len2 + 1 - (2 * found) : len2 - found;
             }
 
-            len1++;
-            len2++;
-            half = len1 >> 1;
-
-            int[] row = new int[len2];
-            int end = len2 - 1;
-
-            for (i = 0; i < len2 - (xcost != 0 ? 0 : half); i++)
-                row[i] = i;
-
-
-            /* go through the matrix and compute the costs.  yes, this is an extremely
-             * obfuscated version, but also extremely memory-conservative and relatively
-             * fast.  */
-
-            if (xcost != 0)
+            int substitutionCost = xcost != 0 ? 2 : 1;
+            if (len2 <= ShortStringThreshold)
             {
+                return EditDistanceCoreShort(left, right, substitutionCost);
+            }
 
-                for (i = 1; i < len1; i++)
+            return EditDistanceCore(left, right, substitutionCost);
+        }
+
+        private static int EditDistance<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right, int xcost) where T : IEquatable<T>
+        {
+            TrimCommonAffixes(ref left, ref right);
+
+            int len1 = left.Length;
+            int len2 = right.Length;
+
+            if (len1 == 0)
+            {
+                return len2;
+            }
+
+            if (len2 == 0)
+            {
+                return len1;
+            }
+
+            if (len1 > len2)
+            {
+                ReadOnlySpan<T> temp = left;
+                left = right;
+                right = temp;
+
+                len1 = left.Length;
+                len2 = right.Length;
+            }
+
+            if (len1 == 1)
+            {
+                int found = Contains(right, left[0]);
+                return xcost != 0 ? len2 + 1 - (2 * found) : len2 - found;
+            }
+
+            int substitutionCost = xcost != 0 ? 2 : 1;
+            if (len2 <= ShortStringThreshold)
+            {
+                return EditDistanceCoreShort(left, right, substitutionCost);
+            }
+
+            return EditDistanceCore(left, right, substitutionCost);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int EditDistanceCoreShort(ReadOnlySpan<char> left, ReadOnlySpan<char> right, int substitutionCost)
+        {
+            Span<int> row = stackalloc int[ShortStringThreshold + 1];
+            return ComputeEditDistance(left, right, substitutionCost, row[..(right.Length + 1)]);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int EditDistanceCoreShort<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right, int substitutionCost) where T : IEquatable<T>
+        {
+            Span<int> row = stackalloc int[ShortStringThreshold + 1];
+            return ComputeEditDistance(left, right, substitutionCost, row[..(right.Length + 1)]);
+        }
+
+        private static int EditDistanceCore(ReadOnlySpan<char> left, ReadOnlySpan<char> right, int substitutionCost)
+        {
+            int rowLength = right.Length + 1;
+            if (rowLength <= StackAllocIntThreshold)
+            {
+                Span<int> row = stackalloc int[rowLength];
+                return ComputeEditDistance(left, right, substitutionCost, row);
+            }
+
+            int[] rented = ArrayPool<int>.Shared.Rent(rowLength);
+            try
+            {
+                return ComputeEditDistance(left, right, substitutionCost, rented.AsSpan(0, rowLength));
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(rented);
+            }
+        }
+
+        private static int EditDistanceCore<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right, int substitutionCost) where T : IEquatable<T>
+        {
+            int rowLength = right.Length + 1;
+            if (rowLength <= StackAllocIntThreshold)
+            {
+                Span<int> row = stackalloc int[rowLength];
+                return ComputeEditDistance(left, right, substitutionCost, row);
+            }
+
+            int[] rented = ArrayPool<int>.Shared.Rent(rowLength);
+            try
+            {
+                return ComputeEditDistance(left, right, substitutionCost, rented.AsSpan(0, rowLength));
+            }
+            finally
+            {
+                ArrayPool<int>.Shared.Return(rented);
+            }
+        }
+
+        private static int ComputeEditDistance(ReadOnlySpan<char> left, ReadOnlySpan<char> right, int substitutionCost, Span<int> row)
+        {
+            int rowLength = right.Length + 1;
+            for (int j = 0; j < rowLength; j++)
+            {
+                row[j] = j;
+            }
+
+            if (substitutionCost == 2)
+            {
+                int end = rowLength - 1;
+
+                for (int i = 1; i <= left.Length; i++)
                 {
-
                     int p = 1;
-
-                    T ch1 = c1[str1 + i - 1];
-                    int c2p = str2;
-
-                    int D = i;
+                    int d = i;
                     int x = i;
+                    char leftValue = left[i - 1];
 
                     while (p <= end)
                     {
-
-                        if (ch1.Equals(c2[c2p++]))
+                        if (leftValue == right[p - 1])
                         {
-                            x = --D;
+                            x = --d;
                         }
                         else
                         {
                             x++;
                         }
-                        D = row[p];
-                        D++;
 
-                        if (x > D)
-                            x = D;
+                        d = row[p] + 1;
+                        if (x > d)
+                        {
+                            x = d;
+                        }
+
                         row[p++] = x;
-
                     }
-
                 }
 
+                return row[end];
             }
-            else
+
+            for (int i = 1; i <= left.Length; i++)
             {
+                int previousDiagonal = row[0];
+                row[0] = i;
+                char leftValue = left[i - 1];
 
-                /* in this case we don't have to scan two corner triangles (of size len1/2)
-                 * in the matrix because no best path can go throught them. note this
-                 * breaks when len1 == len2 == 2 so the memchr() special case above is
-                 * necessary */
-
-                row[0] = len1 - half - 1;
-                for (i = 1; i < len1; i++)
+                for (int j = 1; j < rowLength; j++)
                 {
-                    int p;
+                    int previousRow = row[j];
+                    int insertion = row[j - 1] + 1;
+                    int deletion = previousRow + 1;
+                    int substitution = previousDiagonal + (leftValue == right[j - 1] ? 0 : substitutionCost);
 
-                    T ch1 = c1[str1 + i - 1];
-                    int c2p;
-
-                    int D, x;
-
-                    /* skip the upper triangle */
-                    if (i >= len1 - half)
+                    int best = insertion < deletion ? insertion : deletion;
+                    if (substitution < best)
                     {
-                        int offset = i - (len1 - half);
-                        int c3;
-
-                        c2p = str2 + offset;
-                        p = offset;
-                        c3 = row[p++] + (!ch1.Equals(c2[c2p++]) ? 1 : 0);
-                        x = row[p];
-                        x++;
-                        D = x;
-                        if (x > c3)
-                        {
-                            x = c3;
-                        }
-                        row[p++] = x;
-                    }
-                    else
-                    {
-                        p = 1;
-                        c2p = str2;
-                        D = x = i;
-                    }
-                    /* skip the lower triangle */
-                    if (i <= half + 1)
-                        end = len2 + i - half - 2;
-                    /* main */
-                    while (p <= end)
-                    {
-                        int c3 = --D + (!ch1.Equals(c2[c2p++]) ? 1 : 0);
-                        x++;
-                        if (x > c3)
-                        {
-                            x = c3;
-                        }
-                        D = row[p];
-                        D++;
-                        if (x > D)
-                            x = D;
-                        row[p++] = x;
-
+                        best = substitution;
                     }
 
-                    /* lower triangle sentinel */
-                    if (i <= half)
-                    {
-                        int c3 = --D + (!ch1.Equals(c2[c2p]) ? 1 : 0);
-                        x++;
-                        if (x > c3)
-                        {
-                            x = c3;
-                        }
-                        row[p] = x;
-                    }
+                    row[j] = best;
+                    previousDiagonal = previousRow;
                 }
             }
 
-            i = row[end];
-
-            return i;
-
+            return row[rowLength - 1];
         }
 
-        private static int Memchr<T>(T[] haystack, int offset, T needle, int num) where T : IEquatable<T>
+        private static int ComputeEditDistance<T>(ReadOnlySpan<T> left, ReadOnlySpan<T> right, int substitutionCost, Span<int> row) where T : IEquatable<T>
         {
-
-            if (num != 0)
+            int rowLength = right.Length + 1;
+            for (int j = 0; j < rowLength; j++)
             {
-                int p = 0;
-
-                do
-                {
-                    if (haystack[offset + p].Equals(needle))
-                        return 1;
-
-                    p++;
-                } while (--num != 0);
-
+                row[j] = j;
             }
-            return 0;
 
+            if (substitutionCost == 2)
+            {
+                int end = rowLength - 1;
+
+                for (int i = 1; i <= left.Length; i++)
+                {
+                    int p = 1;
+                    int d = i;
+                    int x = i;
+                    T leftValue = left[i - 1];
+
+                    while (p <= end)
+                    {
+                        if (leftValue.Equals(right[p - 1]))
+                        {
+                            x = --d;
+                        }
+                        else
+                        {
+                            x++;
+                        }
+
+                        d = row[p] + 1;
+                        if (x > d)
+                        {
+                            x = d;
+                        }
+
+                        row[p++] = x;
+                    }
+                }
+
+                return row[end];
+            }
+
+            for (int i = 1; i <= left.Length; i++)
+            {
+                int previousDiagonal = row[0];
+                row[0] = i;
+                T leftValue = left[i - 1];
+
+                for (int j = 1; j < rowLength; j++)
+                {
+                    int previousRow = row[j];
+                    int insertion = row[j - 1] + 1;
+                    int deletion = previousRow + 1;
+                    int substitution = previousDiagonal + (leftValue.Equals(right[j - 1]) ? 0 : substitutionCost);
+
+                    int best = insertion < deletion ? insertion : deletion;
+                    if (substitution < best)
+                    {
+                        best = substitution;
+                    }
+
+                    row[j] = best;
+                    previousDiagonal = previousRow;
+                }
+            }
+
+            return row[rowLength - 1];
+        }
+
+        private static void TrimCommonAffixes(ref ReadOnlySpan<char> left, ref ReadOnlySpan<char> right)
+        {
+            int prefix = 0;
+            int max = Math.Min(left.Length, right.Length);
+
+            while (prefix < max && left[prefix] == right[prefix])
+            {
+                prefix++;
+            }
+
+            if (prefix != 0)
+            {
+                left = left[prefix..];
+                right = right[prefix..];
+            }
+
+            int suffix = 0;
+            max = Math.Min(left.Length, right.Length);
+
+            while (suffix < max && left[left.Length - suffix - 1] == right[right.Length - suffix - 1])
+            {
+                suffix++;
+            }
+
+            if (suffix != 0)
+            {
+                left = left[..^suffix];
+                right = right[..^suffix];
+            }
+        }
+
+        private static void TrimCommonAffixes<T>(ref ReadOnlySpan<T> left, ref ReadOnlySpan<T> right) where T : IEquatable<T>
+        {
+            int prefix = 0;
+            int max = Math.Min(left.Length, right.Length);
+
+            while (prefix < max && left[prefix].Equals(right[prefix]))
+            {
+                prefix++;
+            }
+
+            if (prefix != 0)
+            {
+                left = left[prefix..];
+                right = right[prefix..];
+            }
+
+            int suffix = 0;
+            max = Math.Min(left.Length, right.Length);
+
+            while (suffix < max && left[left.Length - suffix - 1].Equals(right[right.Length - suffix - 1]))
+            {
+                suffix++;
+            }
+
+            if (suffix != 0)
+            {
+                left = left[..^suffix];
+                right = right[..^suffix];
+            }
+        }
+
+        private static int Contains<T>(ReadOnlySpan<T> haystack, T needle) where T : IEquatable<T>
+        {
+            for (int i = 0; i < haystack.Length; i++)
+            {
+                if (haystack[i].Equals(needle))
+                {
+                    return 1;
+                }
+            }
+
+            return 0;
         }
 
         public static double GetRatio<T>(T[] input1, T[] input2) where T : IEquatable<T>
@@ -935,7 +1077,7 @@ namespace FuzzySharp
             int len2   = input2.Length;
             int lensum = len1 + len2;
 
-            int editDistance = EditDistance(input1, input2, 1);
+            int editDistance = EditDistance(input1.AsSpan(), input2.AsSpan(), 1);
 
             return editDistance == 0 ? 1 : (lensum - editDistance) / (double)lensum;
         }
@@ -951,7 +1093,7 @@ namespace FuzzySharp
             int len2 = s2.Length;
             int lensum = len1 + len2;
 
-            int editDistance = EditDistance(s1, s2, 1);
+            int editDistance = EditDistance(s1.AsSpan(), s2.AsSpan(), 1);
 
             return editDistance == 0 ? 1 : (lensum - editDistance) / (double)lensum;
         }
@@ -961,7 +1103,10 @@ namespace FuzzySharp
         {
             ArgumentNullException.ThrowIfNull(s1);
             ArgumentNullException.ThrowIfNull(s2);
-            return GetRatio(s1.ToCharArray(), s2.ToCharArray());
+
+            int lensum = s1.Length + s2.Length;
+            int editDistance = EditDistance(s1.AsSpan(), s2.AsSpan(), 1);
+            return editDistance == 0 ? 1 : (lensum - editDistance) / (double)lensum;
         }
     }
 }

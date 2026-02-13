@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using FuzzySharp.PreProcess;
 using FuzzySharp.Utils;
@@ -9,6 +10,8 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
     {
         public override int Score(string input1, string input2)
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
             string shorter;
             string longer;
 
@@ -72,7 +75,7 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
                 {
                     var i1 = permutation[i];
                     var i2 = fewerTokens[i];
-                    if (StringContainsInOrder(i1, i2)) // must be at least twice as long
+                    if (StringContainsInOrder(i1, i2)) // all chars of i2 appear in order within i1
                     {
                         var score = Scorer(i1, i2);
                         sum += score;

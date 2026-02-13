@@ -1,4 +1,5 @@
-﻿using FuzzySharp.PreProcess;
+﻿using System;
+using FuzzySharp.PreProcess;
 
 namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
 {
@@ -6,6 +7,8 @@ namespace FuzzySharp.SimilarityRatio.Scorer.StrategySensitive
     {
         public override int Score(string input1, string input2)
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
             string shorter;
             string longer;
 

@@ -86,6 +86,7 @@ namespace FuzzySharp.Utils
             _tail--;
             Swap(_tail, 0);
             BubbleDown(0);
+            _heap[_tail] = default!;
             return ret;
         }
 

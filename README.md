@@ -105,7 +105,7 @@ Process.ExtractSorted("goolge", new [] {"google", "bing", "facebook", "linkedin"
 ```
 
 Extraction will use `WeightedRatio` and `full process` by default. Override these in the method parameters to use different scorers and processing.
-Here we use the Fuzz.Ratio scorer and keep the strings as is, instead of Full Process (which will .ToLowercase() before comparing)
+Here we use the Fuzz.Ratio scorer and keep the strings as is, instead of Full Process (which will apply invariant lowercasing before comparing)
 ```csharp
 Process.ExtractOne("cowboys", new[] { "Atlanta Falcons", "New York Jets", "New York Giants", "Dallas Cowboys" }, s => s, ScorerCache.Get<DefaultRatioScorer>());
 (string: Dallas Cowboys, score: 57, index: 3)

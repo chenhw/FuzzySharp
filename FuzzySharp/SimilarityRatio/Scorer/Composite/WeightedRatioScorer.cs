@@ -11,6 +11,8 @@ namespace FuzzySharp.SimilarityRatio.Scorer.Composite
 
         public override int Score(string input1, string input2)
         {
+            ArgumentNullException.ThrowIfNull(input1);
+            ArgumentNullException.ThrowIfNull(input2);
             int len1 = input1.Length;
             int len2 = input2.Length;
 

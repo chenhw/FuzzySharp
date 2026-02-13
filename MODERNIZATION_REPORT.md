@@ -24,6 +24,8 @@
 - Migrated token-based scorers away from runtime regex splitting/matching
 - Optimized scorer cache creation (`GetOrAdd` with lazy factory)
 - Removed temporary list allocations in partial-ratio strategies by tracking `max` directly
+- Rewrote `Levenshtein` hot paths (`EditDistance` / `GetRatio`) to use `ReadOnlySpan<T>` with `stackalloc` + `ArrayPool<int>` row buffers
+- Added benchmark suite (`BenchmarkDotNet`) comparing legacy and rewritten Levenshtein paths
 
 ### API modernization
 - Added async extraction APIs (`ExtractAllAsync`, `ExtractOneAsync`)
@@ -36,10 +38,6 @@
 - Added direct `StringTokenization` unit tests
 
 ## Remaining (optional / next phase)
-
-### High-impact but not yet implemented
-- `Levenshtein` deep rewrite with `Span<T>`, `ArrayPool<T>`, and `stackalloc` for the core DP hot path
-- Benchmark suite (BenchmarkDotNet) for before/after perf validation
 
 ### Code quality follow-up
 - Improve documentation depth for all XML comments (currently materially better than baseline, but still not exhaustive)

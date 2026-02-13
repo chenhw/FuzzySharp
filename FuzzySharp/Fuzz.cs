@@ -83,7 +83,7 @@ namespace FuzzySharp
 
         #region TokenSortRatio
         /// <summary>
-        /// Find all alphanumeric tokens in the string and sort
+        /// Find all whitespace-delimited tokens in the string and sort
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
@@ -96,7 +96,7 @@ namespace FuzzySharp
         }
 
         /// <summary>
-        /// Find all alphanumeric tokens in the string and sort
+        /// Find all whitespace-delimited tokens in the string and sort
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
@@ -110,7 +110,7 @@ namespace FuzzySharp
         }
 
         /// <summary>
-        /// Find all alphanumeric tokens in the string and sort
+        /// Find all whitespace-delimited tokens in the string and sort
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
@@ -123,7 +123,7 @@ namespace FuzzySharp
         }
 
         /// <summary>
-        /// Find all alphanumeric tokens in the string and sort
+        /// Find all whitespace-delimited tokens in the string and sort
         /// those tokens and then take ratio of resulting
         /// joined strings.
         /// </summary>
